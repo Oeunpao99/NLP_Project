@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.env
+.venv/
+venv/
+env/
+ENV/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Models and large binaries
+*.pt
+*.pth
+/model/
+/ml/model/
+/ml/*.pt
+/server/model/
+
+# Databases
+*.sqlite3
+
+# Misc
+*.tar.gz
+
+# Keep package manager files
+!requirements.txt

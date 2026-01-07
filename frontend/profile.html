@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ពត៌មានអ្នកប្រើ - NER ខ្មែរ</title>
+    
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="/static/styles/main.css">
+    <link rel="stylesheet" href="/static/styles/profile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Kantumruy Pro', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            color: #334155;
+        }
+
+        /* Header */
+        .profile-header {
+            background: linear-gradient(135deg, #1e40af, #0ea5e9);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(30, 64, 175, 0.2);
+        }
+
+        .profile-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .profile-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            background: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e40af;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #475569;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover {
+            background: #f1f5f9;
+            color: #1e40af;
+        }
+
+        .nav-link.active {
+            background: #1e40af;
+            color: white;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Profile Layout */
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+
+        /* Sidebar */
+        .profile-sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .profile-avatar {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .avatar-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #1e40af, #0ea5e9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 2.5rem;
+            color: white;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .profile-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 5px;
+        }
+
+        .profile-email {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .profile-stats {
+            margin-top: 25px;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 25px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #1e40af;
+            font-size: 1.1rem;
+        }
+
+        /* Main Content */
+        .profile-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* Profile Card */
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .form-control:disabled {
+            background: #f8fafc;
+            cursor: not-allowed;
+        }
+
+        .form-hint {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #1e40af;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #0da271;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        /* Activity Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 25px;
+            padding-left: 25px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -31px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #1e40af;
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px #e2e8f0;
+        }
+
+        .timeline-date {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+
+        .timeline-content {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #1e40af;
+        }
+
+        /* Danger Zone */
+        .danger-zone {
+            border: 2px solid #fecaca;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fef2f2;
+            margin-top: 30px;
+        }
+
+        .danger-zone h4 {
+            color: #dc2626;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #1e40af;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #1e40af, #0ea5e9);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .profile-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-sidebar {
+                order: 2;
+            }
+            
+            .profile-content {
+                order: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.success {
+            background: #10b981;
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        .notification.warning {
+            background: #f59e0b;
+        }
+
+        .notification.info {
+            background: #3b82f6;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <i class="fas fa-language"></i>
+                <span>NER ខ្មែរ</span>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-home"></i> ទំព័រដើម
+                </a>
+                <a href="/history" class="nav-link">
+                    <i class="fas fa-history"></i> ប្រវត្តិ
+                </a>
+                <a href="/profile" class="nav-link active">
+                    <i class="fas fa-user"></i> ពត៌មានខ្ញុំ
+                </a>
+                <a href="/api/docs" target="_blank" class="nav-link">
+                    <i class="fas fa-code"></i> API
+                </a>
+                <button id="logoutBtn" class="btn btn-danger btn-sm" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> ចាកចេញ
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="profile-header">
+        <div class="container">
+            <h1><i class="fas fa-user-circle"></i> ពត៌មានអ្នកប្រើ</h1>
+            <p>គ្រប់គ្រងពត៌មានគណនី និងការកំណត់ផ្ទាល់ខ្លួនរបស់អ្នក</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="profile-layout" id="profileContent">
+            <!-- Loading State -->
+            <div class="loading">
+                <i class="fas fa-spinner"></i>
+                <p>កំពុងទាញយកពត៌មាន...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> ផ្លាស់ប្តូរពាក្យសម្ងាត់</h3>
+                <button class="close-modal" onclick="closeModal('changePasswordModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">ពាក្យសម្ងាត់ចាស់</label>
+                    <input type="password" id="oldPassword" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់ចាស់">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ពាក្យសម្ងាត់ថ្មី</label>
+                    <input type="password" id="newPassword" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់ថ្មី">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">បញ្ជាក់ពាក្យសម្ងាត់ថ្មី</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="បញ្ចូលពាក្យសម្ងាត់ថ្មីម្តងទៀត">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="closeModal('changePasswordModal')">បោះបង់</button>
+                    <button class="btn btn-primary" onclick="changePassword()">ផ្លាស់ប្តូរ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div id="deleteAccountModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                <h3><i class="fas fa-exclamation-triangle"></i> លុបគណនី</h3>
+                <button class="close-modal" onclick="closeModal('deleteAccountModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="color: #dc2626; margin-bottom: 20px;">
+                    <i class="fas fa-exclamation-circle fa-2x" style="margin-bottom: 10px; display: block;"></i>
+                    <h4 style="margin-bottom: 10px;">ព្រមាន: សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ!</h4>
+                    <p>ការលុបគណនីរបស់អ្នកនឹង៖</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>លុបពត៌មានគណនីរបស់អ្នកជាអចិន្ត្រៃយ៍</li>
+                        <li>លុបប្រវត្តិវិភាគទាំងអស់</li>
+                        <li>ដកអ្នកចេញពីប្រព័ន្ធទាំងស្រុង</li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">បញ្ចូលអ៊ីមែលរបស់អ្នកដើម្បីបញ្ជាក់</label>
+                    <input type="email" id="confirmEmail" class="form-control" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">បញ្ចូលពាក្យសម្ងាត់</label>
+                    <input type="password" id="confirmDeletePassword" class="form-control" placeholder="ពាក្យសម្ងាត់របស់អ្នក">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="closeModal('deleteAccountModal')">បោះបង់</button>
+                    <button class="btn btn-danger" onclick="deleteAccount()">លុបគណនីជាអចិន្ត្រៃយ៍</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Global variables
+        let currentUser = null;
+        let userStats = null;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+        });
+
+        // Check if user is authenticated
+        async function checkAuthentication() {
+            const token = localStorage.getItem('access_token');
+            
+            if (!token) {
+                showNotification('សូមចូលប្រើប្រាស់មុនពេលចូលទំព័រនេះ', 'error');
+                setTimeout(() => window.location.href = '/', 2000);
+                return;
+            }
+            
+            await loadUserProfile();
+        }
+
+        // Load user profile data
+        async function loadUserProfile() {
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/v1/users/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('access_token');
+                        showNotification('សម្រាប់សុវត្ថិភាព សូមចូលម្តងទៀត', 'error');
+                        setTimeout(() => window.location.href = '/', 2000);
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                currentUser = await response.json();
+                await loadUserStats();
+                renderProfile();
+                
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showNotification('មិនអាចទាញយកពត៌មាន: ' + error.message, 'error');
+            }
+        }
+
+        // Load user statistics
+        async function loadUserStats() {
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/v1/predictions?page=1&page_size=1000', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    userStats = {
+                        totalPredictions: data.total || 0,
+                        predictions: data.predictions || []
+                    };
+                    
+                    // Calculate additional stats
+                    const predictions = userStats.predictions;
+                    const totalEntities = predictions.reduce((sum, pred) => {
+                        return sum + (pred.entities 
+                            ? Object.values(pred.entities).reduce((s, arr) => s + (arr?.length || 0), 0)
+                            : 0);
+                    }, 0);
+                    
+                    const totalTime = predictions.reduce((sum, pred) => sum + (pred.inference_time_ms || 0), 0);
+                    const avgTime = predictions.length > 0 ? totalTime / predictions.length : 0;
+                    
+                    userStats.totalEntities = totalEntities;
+                    userStats.avgTime = avgTime;
+                    userStats.lastActivity = predictions.length > 0 
+                        ? new Date(predictions[0].created_at) 
+                        : new Date();
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                userStats = {
+                    totalPredictions: 0,
+                    totalEntities: 0,
+                    avgTime: 0,
+                    lastActivity: new Date(),
+                    predictions: []
+                };
+            }
+        }
+
+        // Render profile page
+        function renderProfile() {
+            const content = document.getElementById('profileContent');
+            
+            if (!currentUser) {
+                content.innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>មិនអាចទាញយកពត៌មានអ្នកប្រើ</p>
+                        <button class="btn btn-primary" onclick="window.location.href='/'">
+                            <i class="fas fa-home"></i> ត្រលប់ទៅទំព័រដើម
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Format dates
+            const createdAt = new Date(currentUser.created_at);
+            const lastLogin = new Date(currentUser.last_login || currentUser.created_at);
+            const lastActivity = userStats ? new Date(userStats.lastActivity) : new Date();
+            
+            content.innerHTML = `
+                <!-- Sidebar -->
+                <aside class="profile-sidebar">
+                    <div class="profile-avatar">
+                        <div class="avatar-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 class="profile-name">${currentUser.email.split('@')[0]}</h3>
+                        <p class="profile-email">${currentUser.email}</p>
+                        <p style="color: #64748b; font-size: 0.9rem; margin-top: 5px;">
+                            សមាជិកតាំងពី ${createdAt.toLocaleDateString('km-KH')}
+                        </p>
+                    </div>
+                    
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">ការវិភាគសរុប</span>
+                            <span class="stat-value">${userStats?.totalPredictions || 0}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">ឈ្មោះពិសេសសរុប</span>
+                            <span class="stat-value">${userStats?.totalEntities || 0}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">ពេលវេលាជាមធ្យម</span>
+                            <span class="stat-value">${userStats?.avgTime ? userStats.avgTime.toFixed(1) + 'ms' : '0ms'}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">ចូលចុងក្រោយ</span>
+                            <span class="stat-value">${lastLogin.toLocaleDateString('km-KH')}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">សកម្មភាពចុងក្រោយ</span>
+                            <span class="stat-value">${lastActivity.toLocaleDateString('km-KH')}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <button class="btn btn-primary" style="width: 100%;" onclick="downloadUserData()">
+                            <i class="fas fa-download"></i> ទាញយកទិន្នន័យរបស់ខ្ញុំ
+                        </button>
+                    </div>
+                </aside>
+                
+                <!-- Main Content -->
+                <div class="profile-content">
+                    <!-- Account Information -->
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-user-cog"></i> ពត៌មានគណនី</h3>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">អ៊ីមែល</label>
+                            <input type="email" class="form-control" value="${currentUser.email}" disabled>
+                            <p class="form-hint">អ៊ីមែលគណនីរបស់អ្នក មិនអាចផ្លាស់ប្តូរបានទេ</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">ថ្ងៃចុះឈ្មោះ</label>
+                            <input type="text" class="form-control" value="${createdAt.toLocaleString('km-KH')}" disabled>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">ស្ថានភាពគណនី</label>
+                            <input type="text" class="form-control" value="${currentUser.is_active ? 'សកម្ម' : 'មិនសកម្ម'}" disabled>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="openModal('changePasswordModal')">
+                                <i class="fas fa-key"></i> ផ្លាស់ប្តូរពាក្យសម្ងាត់
+                            </button>
+                            <button class="btn btn-secondary" onclick="refreshProfile()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-chart-line"></i> សកម្មភាពថ្មីៗ</h3>
+                            <a href="/history" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-history"></i> មើលប្រវត្តិទាំងអស់
+                            </a>
+                        </div>
+                        
+                        <div class="timeline" id="recentActivity">
+                            ${renderRecentActivity()}
+                        </div>
+                    </div>
+                    
+                    <!-- Danger Zone -->
+                    <div class="danger-zone">
+                        <h4><i class="fas fa-exclamation-triangle"></i> តំបន់គ្រោះថ្នាក់</h4>
+                        <p>សកម្មភាពទាំងនេះមិនអាចត្រឡប់ក្រោយបានទេ។ សូមប្រើប្រាស់ដោយប្រុងប្រយ័ត្ន។</p>
+                        
+                        <div style="margin-top: 20px; display: flex; gap: 15px;">
+                            <button class="btn btn-danger" onclick="clearAllHistory()">
+                                <i class="fas fa-trash"></i> លុបប្រវត្តិទាំងអស់
+                            </button>
+                            <button class="btn btn-danger" onclick="openModal('deleteAccountModal')">
+                                <i class="fas fa-user-slash"></i> លុបគណនីរបស់ខ្ញុំ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render recent activity
+        function renderRecentActivity() {
+            if (!userStats || !userStats.predictions || userStats.predictions.length === 0) {
+                return `
+                    <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-search fa-2x" style="margin-bottom: 15px;"></i>
+                        <p>មិនទាន់មានសកម្មភាពណាមួយទេ</p>
+                        <a href="/" class="btn btn-primary" style="margin-top: 15px;">
+                            <i class="fas fa-bolt"></i> ចាប់ផ្តើមវិភាគ
+                        </a>
+                    </div>
+                `;
+            }
+            
+            const recentActivities = userStats.predictions.slice(0, 5);
+            
+            return recentActivities.map((prediction, index) => {
+                const date = new Date(prediction.created_at);
+                const textPreview = prediction.text 
+                    ? (prediction.text.length > 80 
+                        ? prediction.text.substring(0, 80) + '...' 
+                        : prediction.text)
+                    : 'មិនមានអត្ថបទ';
+                
+                const entityCount = prediction.entities 
+                    ? Object.values(prediction.entities).reduce((sum, arr) => sum + (arr?.length || 0), 0)
+                    : 0;
+                
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-date">${date.toLocaleString('km-KH')}</div>
+                        <div class="timeline-content">
+                            <div style="font-weight: 500; margin-bottom: 8px;">
+                                បានវិភាគអត្ថបទ
+                                <span style="color: #1e40af; margin-left: 8px;">
+                                    ${entityCount} ឈ្មោះពិសេស
+                                </span>
+                            </div>
+                            <div style="color: #64748b; font-size: 0.9rem;">
+                                ${textPreview}
+                            </div>
+                            <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                <button class="btn btn-sm btn-secondary" onclick="reusePrediction('${prediction.id}')">
+                                    <i class="fas fa-redo"></i> ប្រើម្តងទៀត
+                                </button>
+                                <a href="/history" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-eye"></i> មើលលម្អិត
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Open modal
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Refresh profile
+        async function refreshProfile() {
+            await loadUserProfile();
+            showNotification('បានធ្វើឱ្យពត៌មានស្រស់ឡើងវិញ', 'success');
+        }
+
+        // Change password
+        async function changePassword() {
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                showNotification('សូមបំពេញពត៌មានទាំងអស់', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showNotification('ពាក្យសម្ងាត់ថ្មីមិនដូចគ្នាទេ', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showNotification('ពាក្យសម្ងាត់ត្រូវតែយ៉ាងហោចណាស់ ៦ ខ្ទង់', 'error');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/v1/auth/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        old_password: oldPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                // Clear form and close modal
+                document.getElementById('oldPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                closeModal('changePasswordModal');
+                
+                showNotification('បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ', 'success');
+                
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showNotification('មិនអាចផ្លាស់ប្តូរពាក្យសម្ងាត់: ' + error.message, 'error');
+            }
+        }
+
+        // Clear all history
+        async function clearAllHistory() {
+            if (!confirm('តើអ្នកពិតជាចង់លុបប្រវត្តិវិភាគទាំងអស់មែនទេ?\n\nសកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ។')) {
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/v1/predictions/clear-all', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                showNotification('បានលុបប្រវត្តិទាំងអស់ដោយជោគជ័យ', 'success');
+                await refreshProfile();
+                
+            } catch (error) {
+                console.error('Error clearing history:', error);
+                showNotification('មិនអាចលុបប្រវត្តិ: ' + error.message, 'error');
+            }
+        }
+
+        // Delete account
+        async function deleteAccount() {
+            const email = document.getElementById('confirmEmail').value;
+            const password = document.getElementById('confirmDeletePassword').value;
+            
+            if (!email || !password) {
+                showNotification('សូមបំពេញអ៊ីមែល និងពាក្យសម្ងាត់', 'error');
+                return;
+            }
+            
+            if (email !== currentUser.email) {
+                showNotification('អ៊ីមែលមិនត្រឹមត្រូវទេ', 'error');
+                return;
+            }
+            
+            if (!confirm('អ្នកពិតជាចង់លុបគណនីរបស់អ្នកជាអចិន្ត្រៃយ៍មែនទេ?\n\nសកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ!')) {
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/v1/auth/delete-account', {
+                    method: 'DELETE',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                // Clear local storage and redirect
+                localStorage.clear();
+                showNotification('បានលុបគណនីដោយជោគជ័យ', 'success');
+                setTimeout(() => window.location.href = '/', 2000);
+                
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                showNotification('មិនអាចលុបគណនី: ' + error.message, 'error');
+            }
+        }
+
+        // Download user data
+        async function downloadUserData() {
+            try {
+                const token = localStorage.getItem('access_token');
+                
+                // Fetch all user data
+                const [profileRes, predictionsRes] = await Promise.all([
+                    fetch('/api/v1/users/me', { headers: { 'Authorization': `Bearer ${token}` } }),
+                    fetch('/api/v1/predictions?page=1&page_size=10000', { headers: { 'Authorization': `Bearer ${token}` } })
+                ]);
+                
+                if (!profileRes.ok || !predictionsRes.ok) {
+                    throw new Error('មិនអាចទាញយកទិន្នន័យ');
+                }
+                
+                const profile = await profileRes.json();
+                const predictions = await predictionsRes.json();
+                
+                // Create data object
+                const userData = {
+                    profile: profile,
+                    statistics: {
+                        total_predictions: predictions.total || 0,
+                        total_entities: predictions.predictions.reduce((sum, pred) => {
+                            return sum + (pred.entities 
+                                ? Object.values(pred.entities).reduce((s, arr) => s + (arr?.length || 0), 0)
+                                : 0);
+                        }, 0),
+                        downloaded_at: new Date().toISOString()
+                    },
+                    predictions: predictions.predictions
+                };
+                
+                // Create download
+                const dataStr = JSON.stringify(userData, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                const exportFileName = `ner_user_data_${currentUser.email}_${Date.now()}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileName);
+                linkElement.click();
+                
+                showNotification('បានទាញយកទិន្នន័យរបស់អ្នក', 'success');
+                
+            } catch (error) {
+                console.error('Error downloading user data:', error);
+                showNotification('មិនអាចទាញយកទិន្នន័យ: ' + error.message, 'error');
+            }
+        }
+
+        // Reuse prediction
+        async function reusePrediction(predictionId) {
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch(`/api/v1/predictions/${predictionId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const prediction = await response.json();
+                
+                if (prediction.text) {
+                    localStorage.setItem('reuse_text', prediction.text);
+                    window.location.href = '/';
+                }
+                
+            } catch (error) {
+                console.error('Error fetching prediction:', error);
+                showNotification('មិនអាចទាញយកការវិភាគ: ' + error.message, 'error');
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('current_user_email');
+            showNotification('បានចាកចេញដោយជោគជ័យ', 'success');
+            setTimeout(() => window.location.href = '/', 1500);
+        }
+
+        // Notification system
+        function showNotification(message, type) {
+            // Remove existing notifications
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 
+                                 type === 'error' ? 'exclamation-circle' : 
+                                 type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

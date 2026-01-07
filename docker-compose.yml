@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: khmer_ner_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      # MYSQL_USER: ${DB_USER}
+      # MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "6306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test:
+        ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - khmer_ner_network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: khmer_ner_phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      UPLOAD_LIMIT: 300M
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - khmer_ner_network
+
+  api:
+    build: .
+    container_name: khmer_ner_api
+    ports:
+      - "${API_PORT}:8001"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      MODEL_DIR: ${MODEL_DIR}
+      PYTHONUNBUFFERED: 1
+      PYTHONPATH: /app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./ml/model:/app/ml/model
+      - ./frontend:/app/frontend
+    networks:
+      - khmer_ner_network
+    command: >
+      sh -c "python scripts/init_db.py &&
+             uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}"
+
+volumes:
+  mysql_data:
+
+networks:
+  khmer_ner_network:
+    driver: bridge

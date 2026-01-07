@@ -1,0 +1,2 @@
+-- Optional MySQL initialization SQL for Docker
+-- Add initial schema, users, or data here if needed

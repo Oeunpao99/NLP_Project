@@ -1,0 +1,2250 @@
+<!DOCTYPE html>
+<html lang="km">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NER ខ្មែរ - ប្រព័ន្ធស្វែងរកឈ្មោះពិសេសក្នុងអត្ថបទ</title>
+
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="/static/styles/main.css" />
+    <link rel="stylesheet" href="/static/styles/ner.css" />
+    <link rel="stylesheet" href="/static/styles/responsive.css" />
+
+    <!-- External libraries -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --primary: #1e40af;
+        --primary-light: #3b82f6;
+        --secondary: #0ea5e9;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --info: #8b5cf6;
+
+        --person: #3b82f6;
+        --location: #10b981;
+        --organization: #f59e0b;
+        --date: #8b5cf6;
+        --money: #ef4444;
+
+        --sidebar-bg: #1e293b;
+        --sidebar-text: #f1f5f9;
+        --sidebar-hover: #334155;
+
+        --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        --hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Kantumruy Pro", "Segoe UI", sans-serif;
+      }
+
+      body {
+        background: var(--bg-gradient);
+        min-height: 100vh;
+        display: flex;
+        color: #334155;
+      }
+
+      /* Loading Screen */
+      #loadingScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--primary);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        color: white;
+      }
+
+      .loading-spinner {
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-top: 5px solid white;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Sidebar Styles */
+      .sidebar {
+        width: 350px;
+        background: var(--sidebar-bg);
+        color: var(--sidebar-text);
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar-header {
+        padding: 25px 20px;
+        border-bottom: 2px solid #334155;
+        text-align: center;
+      }
+
+      .sidebar-logo {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .sidebar-logo i {
+        font-size: 2rem;
+        color: var(--secondary);
+      }
+
+      .sidebar-subtitle {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        line-height: 1.4;
+      }
+
+      .sidebar-menu {
+        padding: 20px 0;
+      }
+
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 16px 25px;
+        color: #cbd5e1;
+        text-decoration: none;
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      .menu-item:hover {
+        background: var(--sidebar-hover);
+        color: white;
+        border-left-color: var(--primary-light);
+      }
+
+      .menu-item.active {
+        background: var(--sidebar-hover);
+        color: white;
+        border-left-color: var(--primary-light);
+      }
+
+      .menu-item i {
+        width: 24px;
+        text-align: center;
+        font-size: 1.2rem;
+      }
+
+      .menu-divider {
+        height: 1px;
+        background: #475569;
+        margin: 15px 25px;
+      }
+
+      .sidebar-footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        padding: 20px;
+        border-top: 2px solid #334155;
+        text-align: center;
+      }
+
+      .version {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-bottom: 5px;
+      }
+
+      .copyright {
+        font-size: 0.7rem;
+        color: #64748b;
+      }
+
+      .social-links {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 15px;
+      }
+
+      .social-links a {
+        color: #94a3b8;
+        font-size: 1.1rem;
+        transition: color 0.3s;
+      }
+
+      .social-links a:hover {
+        color: var(--secondary);
+      }
+
+      .sidebar-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1001;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        width: 50px;
+        height: 50px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+      }
+
+      /* Main Content */
+      .main-content {
+        flex: 1;
+        margin-left: 280px;
+        transition: margin-left 0.3s ease;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px;
+      }
+
+      /* Header */
+      .header {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 30px;
+        border: 3px solid var(--primary);
+        text-align: center;
+      }
+
+      .khmer-title {
+        font-size: 3.5rem;
+        color: var(--primary);
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: block;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .english-title {
+        font-size: 2rem;
+        color: #64748b;
+        margin-bottom: 20px;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .header-description {
+        font-size: 1.2rem;
+        color: #64748b;
+        max-width: 800px;
+        margin: 0 auto 30px;
+        line-height: 1.6;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      /* Main Grid */
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 40px;
+      }
+
+      /* Section Cards */
+      .section-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: var(--card-shadow);
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+
+      .section-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--hover-shadow);
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+      }
+
+      .section-header i {
+        font-size: 1.8rem;
+        color: var(--primary);
+      }
+
+      .section-title {
+        font-size: 1.5rem;
+        color: var(--primary);
+        font-weight: 600;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      /* Text Input Area - IMPORTANT: Added Kantumruy Pro font */
+      .text-input {
+        width: 100%;
+        min-height: 250px;
+        padding: 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        resize: vertical;
+        font-family: "Kantumruy Pro", sans-serif !important; /* Force Kantumruy Pro */
+        transition: border-color 0.3s;
+        background: white;
+        color: #334155;
+      }
+
+      .text-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+      }
+
+      .text-input::placeholder {
+        color: #94a3b8;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .input-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .char-count {
+        color: #64748b;
+        font-size: 0.9rem;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      /* Sample Texts */
+      .sample-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      .sample-btn {
+        padding: 12px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: #475569;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .sample-btn:hover {
+        background: #e2e8f0;
+        border-color: var(--primary-light);
+        transform: translateY(-2px);
+      }
+
+      /* Control Buttons */
+      .controls {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 14px 28px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 140px;
+        justify-content: center;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #1d4ed8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+      }
+
+      .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+        border: 2px solid #e2e8f0;
+      }
+
+      .btn-secondary:hover {
+        background: #e2e8f0;
+        border-color: #cbd5e1;
+      }
+
+      .btn-success {
+        background: var(--success);
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: #0da271;
+        transform: translateY(-2px);
+      }
+
+      /* Output Section */
+      .results-container {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 25px;
+        min-height: 250px;
+        max-height: 400px;
+        overflow-y: auto;
+        line-height: 1.8;
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .no-results {
+        text-align: center;
+        color: #94a3b8;
+        padding: 40px;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .no-results i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        display: block;
+        color: #cbd5e1;
+      }
+
+      /* Entity Tags */
+      .entity-tag {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0 3px;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s;
+        position: relative;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .entity-tag:hover {
+        transform: translateY(-2px);
+      }
+
+      .entity-tag.person {
+        background: var(--person);
+      }
+      .entity-tag.location {
+        background: var(--location);
+      }
+      .entity-tag.organization {
+        background: var(--organization);
+      }
+      .entity-tag.date {
+        background: var(--date);
+      }
+      .entity-tag.money {
+        background: var(--money);
+      }
+
+      /* Stats Grid */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s;
+      }
+
+      .stat-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-3px);
+      }
+
+      .stat-number {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--primary);
+        display: block;
+        line-height: 1;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .stat-label {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-top: 8px;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      /* Entity List */
+      .entity-list {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .entity-group {
+        margin-bottom: 15px;
+      }
+
+      .entity-group-title {
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .entity-items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      /* Legend */
+      .legend {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-top: 30px;
+        box-shadow: var(--card-shadow);
+      }
+
+      .legend-items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 15px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+      }
+
+      /* Notification */
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      .notification.success {
+        background: var(--success);
+      }
+      .notification.error {
+        background: var(--danger);
+      }
+      .notification.warning {
+        background: var(--warning);
+      }
+      .notification.info {
+        background: var(--info);
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideOut {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+
+      /* Responsive Design */
+      @media (max-width: 1200px) {
+        .container {
+          padding: 20px;
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+
+        .sidebar.open {
+          transform: translateX(0);
+        }
+
+        .main-content {
+          margin-left: 0;
+        }
+
+        .sidebar-toggle {
+          display: flex;
+        }
+
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .header {
+          padding: 30px 20px;
+        }
+
+        .khmer-title {
+          font-size: 2.5rem;
+        }
+
+        .english-title {
+          font-size: 1.5rem;
+        }
+
+        .controls {
+          justify-content: center;
+        }
+
+        .btn {
+          min-width: 120px;
+          padding: 12px 20px;
+        }
+
+        .legend-items {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .text-input {
+          font-size: 1rem;
+          padding: 15px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 15px;
+        }
+
+        .section-card {
+          padding: 20px;
+        }
+
+        .sample-buttons {
+          grid-template-columns: 1fr;
+        }
+
+        .btn {
+          width: 100%;
+        }
+      }
+
+      /* Ensure all text elements use Kantumruy Pro */
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p,
+      span,
+      div,
+      button,
+      label {
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+
+      /* Header icon buttons */
+      .icon-btn {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 18px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .icon-btn:hover {
+        color: var(--primary);
+      }
+      .badge {
+        font-weight: 600;
+      }
+
+      /* Specific fix for textarea placeholder */
+      textarea::-webkit-input-placeholder {
+        /* Chrome/Opera/Safari */
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+      textarea::-moz-placeholder {
+        /* Firefox 19+ */
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+      textarea:-ms-input-placeholder {
+        /* IE 10+ */
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+      textarea:-moz-placeholder {
+        /* Firefox 18- */
+        font-family: "Kantumruy Pro", sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+      <div class="loading-spinner"></div>
+      <h2 style="margin-bottom: 10px; font-weight: 600">
+        កំពុងផ្ទុកប្រព័ន្ធ NER ខ្មែរ...
+      </h2>
+      <p>សូមរង់ចាំមួយភ្លែត</p>
+    </div>
+
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <i class="fas fa-language"></i>
+          <span>NER ខ្មែរ</span>
+        </div>
+        <div class="sidebar-subtitle">
+          ប្រព័ន្ធស្វែងរកប្រភេទឈ្មោះក្នុងអត្ថបទ
+        </div>
+        <div
+          id="authArea"
+          style="
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+          "
+        >
+          <button
+            id="loginBtn"
+            class="btn btn-secondary"
+            onclick="openAuthModal('login')"
+          >
+            ចូល
+          </button>
+          <button
+            id="registerBtn"
+            class="btn btn-secondary"
+            onclick="openAuthModal('register')"
+          >
+            ចុះឈ្មោះ
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-menu">
+        <a href="#home" class="menu-item active" onclick="setActiveMenu(this)">
+          <i class="fas fa-home"></i>
+          <span>ទំព័រដើម</span>
+        </a>
+
+        <a href="#analyze" class="menu-item" onclick="setActiveMenu(this)">
+          <i class="fas fa-search"></i>
+          <span>វិភាគអត្ថបទ</span>
+        </a>
+
+        <div class="menu-divider"></div>
+
+        <div class="menu-item" onclick="analyzeText()">
+          <i class="fas fa-play-circle"></i>
+          <span>ចាប់ផ្ដើមវិភាគ</span>
+        </div>
+
+        <a href="/history" class="menu-item" onclick="setActiveMenu(this)">
+          <i class="fas fa-history"></i>
+          <span>ប្រវត្តិវិភាគ</span>
+          <span
+            id="sidebarHistoryBadge"
+            class="badge"
+            style="
+              display: none;
+              margin-left: 8px;
+              background: var(--accent);
+              color: white;
+              padding: 2px 6px;
+              border-radius: 12px;
+              font-size: 12px;
+            "
+          ></span>
+        </a>
+
+        <div class="menu-item" onclick="showSaved()">
+          <i class="fas fa-save"></i>
+          <span>អត្ថបទដែលបានរក្សាទុក</span>
+        </div>
+
+        <div class="menu-divider"></div>
+
+        <a href="/profile" class="menu-item" target="_blank">
+          <i class="fas fa-user"></i>
+          <span>ពត៌មានខ្ញុំ</span>
+        </a>
+
+        <div class="menu-item" onclick="showSettings()">
+          <i class="fas fa-cog"></i>
+          <span>ការកំណត់</span>
+        </div>
+
+        <div class="menu-divider"></div>
+
+        <div class="menu-item" onclick="checkHealth()">
+          <i class="fas fa-heartbeat"></i>
+          <span>ស្ថានភាពប្រព័ន្ធ</span>
+        </div>
+
+        <div class="menu-item" onclick="clearAllData()">
+          <i class="fas fa-trash-alt"></i>
+          <span>សម្អាតទិន្នន័យ</span>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="version">កំណែ ១.០.០</div>
+        <div class="copyright">© ២០២៤ NER ខ្មែរ</div>
+        <div class="social-links">
+          <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+          <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+          <a href="#" title="Telegram"><i class="fab fa-telegram"></i></a>
+          <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent" style="display: none">
+      <div class="container">
+        <!-- Header -->
+        <header class="header">
+          <span class="khmer-title">NER ខ្មែរ</span>
+          <h1 class="english-title">Khmer Named Entity Recognition</h1>
+          <p class="header-description">
+            ប្រព័ន្ធស្វែងរកឈ្មោះពិសេសក្នុងអត្ថបទខ្មែរ។ រកឃើញឈ្មោះមនុស្ស ទីតាំង
+            អង្គការ និងព័ត៌មានផ្សេងៗដោយស្វ័យប្រវត្តិ
+          </p>
+
+          <div class="controls" style="justify-content: center">
+            <button class="btn btn-primary" onclick="scrollToAnalyze()">
+              <i class="fas fa-play"></i> ចាប់ផ្ដើមប្រើ
+            </button>
+            <button class="btn btn-secondary" onclick="showTutorial()">
+              <i class="fas fa-graduation-cap"></i> រៀនពីរបៀបប្រើ
+            </button>
+          </div>
+
+          <!-- Header icons (profile, history) -->
+          <div
+            id="headerIcons"
+            style="
+              position: absolute;
+              right: 20px;
+              top: 18px;
+              display: flex;
+              gap: 12px;
+              align-items: center;
+            "
+          >
+            <!-- Filled by updateAuthUI() -->
+          </div>
+
+          <!-- Header icons (profile, history) -->
+          <div
+            id="headerIcons"
+            style="
+              position: absolute;
+              right: 20px;
+              top: 18px;
+              display: flex;
+              gap: 12px;
+              align-items: center;
+            "
+          >
+            <!-- Filled by updateAuthUI() -->
+          </div>
+        </header>
+
+        <!-- Main Analysis Section -->
+        <div id="analyze" class="main-grid">
+          <!-- Input Section -->
+          <div class="section-card">
+            <div class="section-header">
+              <i class="fas fa-keyboard"></i>
+              <h2 class="section-title">បញ្ចូលអត្ថបទ</h2>
+            </div>
+
+            <textarea
+              id="khmerTextInput"
+              class="text-input"
+              placeholder="បញ្ចូលអត្ថបទខ្មែររបស់អ្នកនៅទីនេះ..."
+              rows="8"
+            >
+នៅក្នុងពិធីសម្ពោធនៅខេត្តព្រះសីហនុ លោកនាយករដ្ឋមន្ត្រី ហ៊ុន ម៉ាណែត បានថ្លែងថា ក្រុមហ៊ុនចិន Huawei នឹងវិនិយោគ ១០០ លានដុល្លារក្នុងការកសាងអ៊ិនធឺណិត 5G ។ អ្នកអភិបាលខេត្ត លោក គឹម ស្រីថាន ក៏បានចូលរួមផងដែរ។ ការសម្រេចនេះត្រូវបានស្នើឡើងដោយក្រសួងប្រៃសណីយ៍ និងទូរគមនាគមន៍ កាលពីខែមុន។</textarea
+            >
+
+            <div class="input-footer">
+              <div class="char-count"><span id="charCount">0</span> អក្សរ</div>
+              <div class="input-actions">
+                <button id="clearBtn" class="btn btn-secondary">
+                  <i class="fas fa-broom"></i> លុប
+                </button>
+                <button id="predictBtn" class="btn btn-success">
+                  <i class="fas fa-search"></i> វិភាគ
+                </button>
+              </div>
+            </div>
+
+            <!-- Sample Texts -->
+            <div style="margin-top: 25px">
+              <h3 style="margin-bottom: 15px; color: var(--primary)">
+                <i class="fas fa-file-alt"></i> អត្ថបទគំរូ
+              </h3>
+              <div class="sample-buttons">
+                <button class="sample-btn" data-sample="news">
+                  <i class="fas fa-newspaper"></i> ព័ត៌មាន
+                </button>
+                <button class="sample-btn" data-sample="government">
+                  <i class="fas fa-landmark"></i> រដ្ឋាភិបាល
+                </button>
+                <button class="sample-btn" data-sample="tourism">
+                  <i class="fas fa-umbrella-beach"></i> ទេសចរណ៍
+                </button>
+                <button class="sample-btn" data-sample="business">
+                  <i class="fas fa-briefcase"></i> អាជីវកម្ម
+                </button>
+              </div>
+            </div>
+
+            <!-- Format Options -->
+            <div style="margin-top: 25px">
+              <h3 style="margin-bottom: 15px; color: var(--primary)">
+                <i class="fas fa-code"></i> ទម្រង់លទ្ធផល
+              </h3>
+              <div class="sample-buttons">
+                <button class="format-btn sample-btn active" data-format="html">
+                  <i class="fas fa-eye"></i> ជាទម្រង់កូដ
+                </button>
+                <button class="format-btn sample-btn" data-format="json">
+                  <i class="fas fa-code"></i> JSON
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Output Section -->
+          <div class="section-card">
+            <div class="section-header">
+              <i class="fas fa-chart-bar"></i>
+              <h2 class="section-title">លទ្ធផលវិភាគ</h2>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-number" id="personCount">0</span>
+                <span class="stat-label">ឈ្មោះមនុស្ស</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number" id="locationCount">0</span>
+                <span class="stat-label">ទីតាំង</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number" id="orgCount">0</span>
+                <span class="stat-label">អង្គការ</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number" id="totalCount">0</span>
+                <span class="stat-label">សរុប</span>
+              </div>
+            </div>
+
+            <!-- Results Container -->
+            <div class="results-container" id="resultsContainer">
+              <div class="no-results">
+                <i class="fas fa-search"></i>
+                <h3>មិនទាន់មានលទ្ធផល</h3>
+                <p>សូមបញ្ចូលអត្ថបទ រួចចុច "វិភាគ"</p>
+              </div>
+            </div>
+
+            <!-- Entity List -->
+            <div class="entity-list" id="entityList">
+              <!-- Entities will be added here dynamically -->
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="controls">
+              <button class="btn btn-secondary" onclick="exportResults('json')">
+                <i class="fas fa-file-code"></i> JSON
+              </button>
+              <button class="btn btn-secondary" onclick="copyResults()">
+                <i class="fas fa-copy"></i> ចម្លង
+              </button>
+              <button class="btn btn-primary" onclick="saveResults()">
+                <i class="fas fa-save"></i> រក្សាទុក
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend Section -->
+        <div class="legend">
+          <div class="section-header">
+            <i class="fas fa-key"></i>
+            <h2 class="section-title">សញ្ញាណឈ្មោះពិសេស</h2>
+          </div>
+
+          <div class="legend-items">
+            <div class="legend-item">
+              <div class="legend-color" style="background: var(--person)"></div>
+              <span>ឈ្មោះមនុស្ស</span>
+            </div>
+            <div class="legend-item">
+              <div
+                class="legend-color"
+                style="background: var(--location)"
+              ></div>
+              <span>ទីតាំង/កន្លែង</span>
+            </div>
+            <div class="legend-item">
+              <div
+                class="legend-color"
+                style="background: var(--organization)"
+              ></div>
+              <span>អង្គការ/ក្រុមហ៊ុន</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background: var(--date)"></div>
+              <span>កាលបរិច្ឆេទ</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background: var(--money)"></div>
+              <span>ចំនួនទឹកប្រាក់</span>
+            </div>
+          </div>
+        </div>
+        <!-- Footer -->
+        <footer
+          style="
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #e2e8f0;
+            color: #64748b;
+          "
+        >
+          <p>NER ខ្មែរ - ប្រព័ន្ធស្វែងរកឈ្មោះពិសេសក្នុងអត្ថបទ</p>
+          <p style="margin-top: 10px; font-size: 0.9rem">
+            API ដំណើរការលើច្រក 8001 |
+            <a href="/api/docs" target="_blank" style="color: var(--primary)"
+              >ឯកសារ API</a
+            >
+            |
+            <a href="/api/v1/health" style="color: var(--primary)">ស្ថានភាព</a>
+            |
+            <a href="#" onclick="showHelp()" style="color: var(--primary)"
+              >ជំនួយ</a
+            >
+          </p>
+          <p style="margin-top: 15px; font-size: 0.8rem">
+            បច្ចេកវិទ្យា: Machine Learning • Natural Language Processing • Khmer
+            NLP
+          </p>
+        </footer>
+      </div>
+    </main>
+
+    <!-- Auth modal -->
+    <div
+      id="authModal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 2000;
+      "
+    >
+      <div
+        style="
+          background: white;
+          padding: 22px;
+          border-radius: 8px;
+          width: 340px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        "
+      >
+        <h3
+          id="authModalTitle"
+          style="margin: 0 0 8px 0; font-family: 'Kantumruy Pro', sans-serif"
+        >
+          ចូល
+        </h3>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+          "
+        >
+          <input
+            id="authEmail"
+            type="email"
+            placeholder="អ៊ីម៉ែល"
+            style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px"
+          />
+          <input
+            id="authPassword"
+            type="password"
+            placeholder="ពាក្យសម្ងាត់"
+            style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px"
+          />
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              justify-content: flex-end;
+              margin-top: 6px;
+            "
+          >
+            <button class="btn btn-secondary" onclick="closeAuthModal()">
+              បិទ
+            </button>
+            <button
+              id="authSubmitBtn"
+              class="btn btn-primary"
+              onclick="submitAuth()"
+            >
+              បញ្ជូន
+            </button>
+            <span
+              id="authSpinner"
+              style="display: none; align-self: center; margin-left: 6px"
+              ><i class="fas fa-spinner fa-spin"></i
+            ></span>
+          </div>
+          <div
+            style="
+              margin-top: 8px;
+              font-size: 0.9rem;
+              color: #64748b;
+              text-align: center;
+            "
+          >
+            <a href="#" id="toggleAuthMode" onclick="toggleAuthMode(event)"
+              >មិនទាន់មានគណនី? ​ចុះ​ឈ្មោះទីនេះ​</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal" style="display: none">
+      <div class="modal-card">
+        <div class="history-left">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 15px;
+            "
+          >
+            <h4 style="margin: 0; font-size: 18px; color: var(--primary)">
+              <i class="fas fa-history"></i> ប្រវត្តិវិភាគ
+            </h4>
+            <div style="display: flex; gap: 10px; align-items: center">
+              <button class="btn btn-secondary" onclick="clearAnonHistory()">
+                <i class="fas fa-trash"></i> សម្អាត (ឥតឈ្មោះ)
+              </button>
+              <button class="btn btn-secondary" onclick="closeHistoryModal()">
+                <i class="fas fa-times"></i> បិទ
+              </button>
+            </div>
+          </div>
+
+          <div
+            style="
+              background: #f8fafc;
+              padding: 10px;
+              border-radius: 8px;
+              margin-bottom: 15px;
+            "
+          >
+            <p style="margin: 0; font-size: 14px; color: #475569">
+              <i class="fas fa-info-circle"></i> ចុចលើការវិភាគមួយដើម្បីមើលលម្អិត
+            </p>
+          </div>
+
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th style="width: 50px">#</th>
+                <th style="width: 150px">កាលបរិច្ឆេទ</th>
+                <th>អត្ថបទ</th>
+                <th style="width: 80px">ឈ្មោះពិសេស</th>
+                <th style="width: 100px">ពេល(ms)</th>
+                <th style="width: 100px">សកម្មភាព</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="6" class="history-empty">កំពុងទាញប្រវត្តិ...</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-top: 15px;
+            "
+          >
+            <div id="historyPager" style="font-size: 14px; color: #64748b">
+              ទំព័រ 1 នៃ 1
+            </div>
+            <div style="display: flex; gap: 10px">
+              <button
+                class="btn btn-secondary"
+                id="historyPrevBtn"
+                onclick="loadHistory(currentHistoryPage - 1)"
+              >
+                <i class="fas fa-chevron-left"></i> ថយក្រោយ
+              </button>
+              <button
+                class="btn btn-primary"
+                id="historyNextBtn"
+                onclick="loadHistory(currentHistoryPage + 1)"
+              >
+                បន្ត <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="history-right">
+          <h4 style="margin-top: 0; color: var(--primary)">
+            <i class="fas fa-info-circle"></i> លម្អិតការវិភាគ
+          </h4>
+          <div
+            id="historyDetail"
+            style="
+              font-size: 14px;
+              color: #334155;
+              height: 100%;
+              overflow-y: auto;
+            "
+          >
+            <div style="text-align: center; padding: 40px 0; color: #94a3b8">
+              <i class="fas fa-mouse-pointer fa-2x"></i>
+              <p style="margin-top: 10px">
+                សូមជ្រើសរើសការវិភាគមួយដើម្បីមើលលម្អិត
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- JavaScript -->
+    <script>
+      // Initialize when DOM is loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        // Hide loading screen after 1.5 seconds
+        setTimeout(() => {
+          document.getElementById("loadingScreen").style.display = "none";
+          document.getElementById("mainContent").style.display = "block";
+          checkAPIStatus();
+        }, 1500);
+
+        // Initialize components
+        initializeComponents();
+        // Load current user if token exists
+        fetchCurrentUser().then(() => updateAuthUI());
+      });
+
+      // Sidebar functionality
+      function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        sidebar.classList.toggle("open");
+      }
+
+      function setActiveMenu(element) {
+        document.querySelectorAll(".menu-item").forEach((item) => {
+          item.classList.remove("active");
+        });
+        element.classList.add("active");
+
+        // Close sidebar on mobile after selection
+        if (window.innerWidth <= 1024) {
+          toggleSidebar();
+        }
+      }
+
+      // Sample texts
+      const samples = {
+        news: "ភ្នំពេញ៖ នៅថ្ងៃទី១៥ ខែមករា ឆ្នាំ២០២៤ លោកនាយករដ្ឋមន្ត្រី ហ៊ុន ម៉ាណែត បានអញ្ជើញទៅកាន់ប្រទេសជប៉ុន។ ការអញ្ជើញនេះធ្វើឡើងតាមការអញ្ជើញរបស់លោកនាយករដ្ឋមន្ត្រីជប៉ុន ហ្វុយមីអូ គីស៊ីដា។ ក្រសួងការបរទេសកម្ពុជាបានឲ្យដឹងថា កិច្ចប្រជុំនឹងពិភាក្សាអំពីកិច្ចសហប្រតិបត្តិការក្នុងតំបន់។",
+        government:
+          "សម្តេចអគ្គមហាសេនាបតីតេជោ ហ៊ុន សែន នាយករដ្ឋមន្ត្រីកម្ពុជា បានអញ្ជើញធ្វើទស្សនកិច្ចផ្លូវអាកាសទៅកាន់ប្រទេសចិន។ ការធ្វើទស្សនកិច្ចនេះធ្វើឡើងក្រោយពីការអញ្ជើញពីលោកនាយករដ្ឋមន្ត្រីចិន លី ឆាង។ ក្រសួងការបរទេសកម្ពុជាបានបញ្ជាក់ថា កិច្ចប្រជុំនឹងពិភាក្សាអំពីកិច្ចសហប្រតិបត្តិការក្នុងតំបន់។",
+        tourism:
+          "ខេត្តសៀមរាប៖ ឧទ្យានជាតិអង្គរវត្តទទួលភ្ញៀវទេសចរចំនួន ២០០,០០០ នាក់ក្នុងរយៈពេល ៣ខែដំបូងនៃឆ្នាំ២០២៤។ លោក កែម សុភ័ណ អភិបាលខេត្តសៀមរាប បានថ្លែងក្នុងពិធីសម្ពោធសណ្ឋាគារថ្មីនៅក្នុងទីរួមខេត្ត។",
+        business:
+          "ក្រុមហ៊ុន ACLEDA Bank បានរាយការណ៍ថា ប្រាក់ចំណេញប្រចាំឆ្នាំ២០២៣ កើនឡើង២០% ដោយទទួលបាន ៥០០ លានដុល្លារ។ លោក អ៊ិន ជាន់ ប្រធានក្រុមហ៊ុន បានថ្លែងក្នុងពិធីសម្ពោធនៅទីស្នាក់ការកណ្តាល ភ្នំពេញ។ ក្រុមហ៊ុនមានសាខាច្រើនជាង ៣០០ នៅទូទាំងប្រទេសកម្ពុជា។",
+      };
+
+      // Initialize components
+      function initializeComponents() {
+        // Character counter
+        const textInput = document.getElementById("khmerTextInput");
+        textInput.addEventListener("input", function () {
+          document.getElementById("charCount").textContent = this.value.length;
+        });
+
+        // Set initial character count
+        document.getElementById("charCount").textContent =
+          textInput.value.length;
+
+        // Sample buttons
+        document.querySelectorAll(".sample-btn[data-sample]").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const sample = this.dataset.sample;
+            textInput.value = samples[sample] || "";
+            document.getElementById("charCount").textContent =
+              textInput.value.length;
+          });
+        });
+
+        // Format buttons
+        document.querySelectorAll(".format-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            document
+              .querySelectorAll(".format-btn")
+              .forEach((b) => b.classList.remove("active"));
+            this.classList.add("active");
+          });
+        });
+
+        // Clear button
+        document
+          .getElementById("clearBtn")
+          .addEventListener("click", function () {
+            textInput.value = "";
+            document.getElementById("charCount").textContent = "0";
+            clearResults();
+          });
+
+        // Predict button
+        document
+          .getElementById("predictBtn")
+          .addEventListener("click", analyzeText);
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener("click", function (event) {
+          const sidebar = document.getElementById("sidebar");
+          const toggleBtn = document.querySelector(".sidebar-toggle");
+
+          if (
+            window.innerWidth <= 1024 &&
+            !sidebar.contains(event.target) &&
+            !toggleBtn.contains(event.target) &&
+            sidebar.classList.contains("open")
+          ) {
+            sidebar.classList.remove("open");
+          }
+        });
+
+        // Keyboard shortcut for sidebar (Ctrl+B)
+        document.addEventListener("keydown", function (e) {
+          if (e.ctrlKey && e.key === "b") {
+            e.preventDefault();
+            toggleSidebar();
+          }
+        });
+      }
+
+      // Auth helpers
+      let _authMode = "login";
+      function openAuthModal(mode = "login") {
+        _authMode = mode;
+        document.getElementById("authModalTitle").textContent =
+          mode === "login" ? "ចូល" : "ចុះឈ្មោះ";
+        document.getElementById("toggleAuthMode").textContent =
+          mode === "login"
+            ? "ត្រូវការ​ការ​ចុះ​ឈ្មោះ?"
+            : "មែនទេ, ខ្ញុំមានគណនីរួចទៅហើយ";
+        document.getElementById("authEmail").value = "";
+        document.getElementById("authPassword").value = "";
+        document.getElementById("authModal").style.display = "flex";
+      }
+
+      function closeAuthModal() {
+        document.getElementById("authModal").style.display = "none";
+      }
+
+      function toggleAuthMode(e) {
+        e.preventDefault();
+        _authMode = _authMode === "login" ? "register" : "login";
+        document.getElementById("authModalTitle").textContent =
+          _authMode === "login" ? "ចូល" : "ចុះឈ្មោះ";
+        document.getElementById("toggleAuthMode").textContent =
+          _authMode === "login"
+            ? "ត្រូវការ​ការ​ចុះ​ឈ្មោះ?"
+            : "មែនទេ, ខ្ញុំមានគណនីរួចទៅហើយ";
+      }
+// កែសម្រួល function analyzeText() ដើម្បីបង្ខំឲ្យ user login មុននឹងប្រើ
+async function analyzeText() {
+    // Check if user is logged in
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        showNotification("សូមចូលឬចុះឈ្មោះមុនពេលប្រើប្រាស់!", "error");
+        openAuthModal('login'); // បើក modal login ដោយស្វ័យប្រវត្តិ
+        return;
+    }
+
+    const text = document.getElementById("khmerTextInput").value.trim();
+    if (!text) {
+        showNotification("សូមបញ្ចូលអត្ថបទខ្មែរ!", "error");
+        return;
+    }
+
+    // ... កូដដើមបន្តដូចធម្មតា ...
+}
+      async function submitAuth() {
+        const email = document.getElementById("authEmail").value.trim();
+        const password = document.getElementById("authPassword").value.trim();
+        if (!email || !password) {
+          showNotification("សូមបំពេញអ៊ីម៉ែល និងពាក្យសម្ងាត់", "error");
+          return;
+        }
+
+        const btn = document.getElementById("authSubmitBtn");
+        const spinner = document.getElementById("authSpinner");
+        if (btn) btn.disabled = true;
+        if (spinner) spinner.style.display = "inline-block";
+
+        try {
+          if (_authMode === "register") {
+            await registerUser(email, password);
+            showNotification("ចុះឈ្មោះបានជោគជ័យ — ឥឡូវសូមចូល", "success");
+            _authMode = "login";
+            document.getElementById("authModalTitle").textContent = "ចូល";
+          } else {
+            await loginUser(email, password);
+            closeAuthModal();
+            showNotification("ចូលបានជោគជ័យ", "success");
+          }
+          updateAuthUI();
+        } catch (err) {
+          console.error("Auth error:", err);
+          showNotification("កំហុស៖ " + (err.message || err), "error");
+        } finally {
+          if (btn) btn.disabled = false;
+          if (spinner) spinner.style.display = "none";
+        }
+      }
+
+      async function loginUser(email, password) {
+        const res = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Invalid credentials");
+        }
+        const data = await res.json();
+        localStorage.setItem("access_token", data.access_token);
+        await fetchCurrentUser();
+      }
+
+      async function registerUser(email, password) {
+        const res = await fetch("/api/v1/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Registration failed");
+        }
+        // Optionally auto-login after register
+        await loginUser(email, password);
+      }
+
+      async function fetchCurrentUser() {
+        try {
+          const token = localStorage.getItem("access_token");
+          if (!token) return null;
+          const res = await fetch("/api/v1/users/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) {
+            localStorage.removeItem("access_token");
+            return null;
+          }
+          const data = await res.json();
+          localStorage.setItem("current_user_email", data.email);
+          return data;
+        } catch (err) {
+          console.error("fetchCurrentUser error", err);
+          return null;
+        }
+      }
+
+      function updateAuthUI() {
+        const authArea = document.getElementById("authArea");
+        const headerIcons = document.getElementById("headerIcons");
+        const token = localStorage.getItem("access_token");
+        const email = localStorage.getItem("current_user_email");
+        if (token && email) {
+          authArea.innerHTML = `<div style="display:flex; gap:8px; align-items:center;">
+              <span style="color:white; font-weight:600;">${email}</span>
+              <button class="btn btn-secondary" onclick="logout()">ចាកចេញ</button>
+            </div>`;
+
+          if (headerIcons) {
+            headerIcons.innerHTML = `
+              <button class="icon-btn" title="ប្រវត្តិវិភាគ" onclick="showHistory()">
+                <i class="fas fa-history"></i>
+                <span id="historyBadge" class="badge" style="display:none; margin-left:6px; background:var(--accent); color:white; padding:2px 6px; border-radius:12px; font-size:12px;"></span>
+              </button>
+              <button class="icon-btn" title="ប្រូហ្វាយល៍" onclick="openProfile()">
+                <i class="fas fa-user-circle"></i>
+              </button>
+            `;
+          }
+
+          // Try to fetch and update history badge
+          updateHistoryBadge();
+        } else {
+          authArea.innerHTML = `<button id="loginBtn" class="btn btn-secondary" onclick="openAuthModal('login')">ចូល</button>
+            <button id="registerBtn" class="btn btn-secondary" onclick="openAuthModal('register')">ចុះឈ្មោះ</button>`;
+          if (headerIcons)
+            headerIcons.innerHTML = `<button class="icon-btn" title="ចូល" onclick="openAuthModal('login')"><i class="fas fa-user"></i></button>`;
+        }
+      }
+
+      async function updateHistoryBadge() {
+        const badge = document.getElementById("historyBadge");
+        const sidebarBadge = document.getElementById("sidebarHistoryBadge");
+        if (!badge && !sidebarBadge) return;
+
+        // If user is not logged in, show local anonymous history count
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          const anon = JSON.parse(localStorage.getItem("anon_history") || "[]");
+          const total = Array.isArray(anon) ? anon.length : 0;
+          if (badge) {
+            if (total > 0) {
+              badge.textContent = total;
+              badge.style.display = "inline-block";
+            } else {
+              badge.style.display = "none";
+            }
+          }
+          if (sidebarBadge) {
+            if (total > 0) {
+              sidebarBadge.textContent = total;
+              sidebarBadge.style.display = "inline-block";
+            } else {
+              sidebarBadge.style.display = "none";
+            }
+          }
+          return;
+        }
+
+        try {
+          const data = await window.api.getHistory(1, 1);
+          const total = data && typeof data.total === "number" ? data.total : 0;
+          if (badge) {
+            if (total > 0) {
+              badge.textContent = total;
+              badge.style.display = "inline-block";
+            } else {
+              badge.style.display = "none";
+            }
+          }
+          if (sidebarBadge) {
+            if (total > 0) {
+              sidebarBadge.textContent = total;
+              sidebarBadge.style.display = "inline-block";
+            } else {
+              sidebarBadge.style.display = "none";
+            }
+          }
+        } catch (err) {
+          if (badge) badge.style.display = "none";
+          if (sidebarBadge) sidebarBadge.style.display = "none";
+        }
+      }
+
+      function openProfile() {
+        const email = localStorage.getItem("current_user_email");
+        const content = document.getElementById("profileContent");
+        content.innerHTML = `<div style="font-size:14px;"><strong>អ៊ីម៉ែល:</strong> ${
+          email || "—"
+        }</div>`;
+        document.getElementById("profileModal").style.display = "flex";
+      }
+
+      function closeProfileModal() {
+        document.getElementById("profileModal").style.display = "none";
+      }
+
+      function logout() {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("current_user_email");
+        updateAuthUI();
+        showNotification("បានចាកចេញ", "success");
+      }
+
+      // API Functions
+      function checkAPIStatus() {
+        fetch("/api/v1/health")
+          .then((res) => res.json())
+          .then((data) => {
+            console.log("API Status:", data);
+            if (data.status === "healthy") {
+              showNotification("API ដំណើរការធម្មតា", "success");
+            }
+          })
+          .catch((err) => {
+            console.log("API not reachable:", err);
+            showNotification("មិនអាចភ្ជាប់ទៅ API", "warning");
+          });
+      }
+
+      async function analyzeText() {
+        const text = document.getElementById("khmerTextInput").value.trim();
+        if (!text) {
+          showNotification("សូមបញ្ចូលអត្ថបទខ្មែរ!", "error");
+          return;
+        }
+
+        const format =
+          document.querySelector(".format-btn.active").dataset.format;
+        const predictBtn = document.getElementById("predictBtn");
+        const originalText = predictBtn.innerHTML;
+
+        // Show loading state
+        predictBtn.disabled = true;
+        predictBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> កំពុងវិភាគ...';
+
+        try {
+          const headers = {};
+          const token = localStorage.getItem("access_token");
+          if (token) headers["Authorization"] = `Bearer ${token}`;
+          const response = await fetch(
+            `/api/v1/predict?text=${encodeURIComponent(text)}&format=${format}`,
+            { headers }
+          );
+          const data = await response.json();
+
+          if (format === "html" && data.formatted_output) {
+            displayVisualResults(data);
+          } else {
+            displayJSONResults(data);
+          }
+
+          if (data.entities) {
+            updateStats(data.entities);
+            updateEntityList(data.entities);
+          }
+
+          showNotification(
+            `វិភាគដោយជោគជ័យ! រកឃើញ ${
+              Object.values(data.entities || {}).flat().length
+            } ឈ្មោះពិសេស`,
+            "success"
+          );
+
+          // If user is not logged in, save prediction locally for anonymous history
+          try {
+            const token = localStorage.getItem("access_token");
+            if (!token) {
+              const anonItem = {
+                text: text,
+                created_at: new Date().toISOString(),
+                formatted_output:
+                  format === "html" ? data.formatted_output || "" : null,
+                entities: data.entities || {},
+                inference_time_ms: data.inference_time_ms || 0,
+              };
+              if (window.saveAnonPrediction)
+                window.saveAnonPrediction(anonItem);
+            }
+            // Update history badge (works for both anonymous and logged-in)
+            updateHistoryBadge();
+          } catch (e) {
+            /* ignore */
+          }
+        } catch (error) {
+          console.error("Analysis error:", error);
+          showNotification("មានបញ្ហាក្នុងការវិភាគ: " + error.message, "error");
+
+          // Fallback to client-side processing
+          fallbackAnalysis(text);
+        } finally {
+          predictBtn.disabled = false;
+          predictBtn.innerHTML = originalText;
+        }
+      }
+
+      function displayVisualResults(data) {
+        const resultsContainer = document.getElementById("resultsContainer");
+        resultsContainer.innerHTML = `
+                <div style="font-size: 18px; line-height: 2; font-family: 'Kantumruy Pro', sans-serif;">
+                    ${data.formatted_output}
+                </div>
+            `;
+      }
+
+      function displayJSONResults(data) {
+        const resultsContainer = document.getElementById("resultsContainer");
+        const pre = document.createElement("pre");
+        pre.style.cssText = `
+                background: #f8fafc;
+                padding: 20px;
+                border-radius: 8px;
+                overflow-x: auto;
+                font-family: 'Courier New', monospace;
+                font-size: 14px;
+            `;
+        pre.textContent = JSON.stringify(data, null, 2);
+        resultsContainer.innerHTML = "";
+        resultsContainer.appendChild(pre);
+      }
+
+      function updateStats(entities) {
+        const counts = {
+          person: 0,
+          location: 0,
+          organization: 0,
+          total: 0,
+        };
+
+        for (const [type, list] of Object.entries(entities)) {
+          if (type === "PER") counts.person = list.length;
+          if (type === "LOC") counts.location = list.length;
+          if (type === "ORG") counts.org = list.length;
+          counts.total += list.length;
+        }
+
+        document.getElementById("personCount").textContent = counts.person;
+        document.getElementById("locationCount").textContent = counts.location;
+        document.getElementById("orgCount").textContent = counts.org;
+        document.getElementById("totalCount").textContent = counts.total;
+      }
+      // Add this to your JavaScript (inside the script tag)
+      const api = {
+        async getHistory(page = 1, pageSize = 20) {
+          try {
+            const token = localStorage.getItem("access_token");
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+            const response = await fetch(
+              `/api/v1/predictions?page=${page}&page_size=${pageSize}`,
+              {
+                headers,
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            return await response.json();
+          } catch (error) {
+            console.error("API Error:", error);
+            throw error;
+          }
+        },
+
+        async deletePrediction(predictionId) {
+          try {
+            const token = localStorage.getItem("access_token");
+            if (!token) throw new Error("Not authenticated");
+
+            const response = await fetch(
+              `/api/v1/predictions/${predictionId}`,
+              {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            return await response.json();
+          } catch (error) {
+            console.error("API Error:", error);
+            throw error;
+          }
+        },
+      };
+
+      // Make it globally available
+      window.api = api;
+
+      function updateEntityList(entities) {
+        const entityList = document.getElementById("entityList");
+        let html = "";
+
+        const typeMap = {
+          PER: { label: "ឈ្មោះមនុស្ស", color: "person" },
+          LOC: { label: "ទីតាំង", color: "location" },
+          ORG: { label: "អង្គការ", color: "organization" },
+          DATE: { label: "កាលបរិច្ឆេទ", color: "date" },
+          MONEY: { label: "ប្រាក់", color: "money" },
+        };
+
+        for (const [type, items] of Object.entries(entities)) {
+          const typeInfo = typeMap[type] || { label: type, color: "secondary" };
+          if (items.length > 0) {
+            html += `
+                        <div class="entity-group">
+                            <div class="entity-group-title">
+                                <span class="entity-tag ${typeInfo.color}">${
+              typeInfo.label
+            }</span>
+                                <span>(${items.length})</span>
+                            </div>
+                            <div class="entity-items">
+                                ${items
+                                  .map(
+                                    (item) => `
+                                    <span class="entity-tag ${typeInfo.color}" 
+                                          onclick="showEntityInfo('${item}', '${typeInfo.label}')">
+                                        ${item}
+                                    </span>
+                                `
+                                  )
+                                  .join("")}
+                            </div>
+                        </div>
+                    `;
+          }
+        }
+
+        entityList.innerHTML =
+          html ||
+          '<p style="text-align: center; color: #94a3b8;">មិនមានឈ្មោះពិសេសត្រូវបានរកឃើញ</p>';
+      }
+
+      function clearResults() {
+        const resultsContainer = document.getElementById("resultsContainer");
+        resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <h3>មិនទាន់មានលទ្ធផល</h3>
+                    <p>សូមបញ្ចូលអត្ថបទ រួចចុច "វិភាគ"</p>
+                </div>
+            `;
+
+        document.getElementById("entityList").innerHTML = "";
+        updateStats({});
+      }
+
+      function fallbackAnalysis(text) {
+        // Simple fallback processing for demonstration
+        const entities = {
+          PER: ["ហ៊ុន ម៉ាណែត", "គឹម ស្រីថាន"],
+          LOC: ["ខេត្តព្រះសីហនុ"],
+          ORG: ["Huawei", "ក្រសួងប្រៃសណីយ៍ និងទូរគមនាគមន៍"],
+          MONEY: ["១០០ លានដុល្លារ"],
+        };
+
+        // Create simple formatted output
+        let formattedText = text;
+        const entityTypes = {
+          person: ["ហ៊ុន ម៉ាណែត", "គឹម ស្រីថាន"],
+          location: ["ខេត្តព្រះសីហនុ"],
+          organization: ["Huawei", "ក្រសួងប្រៃសណីយ៍ និងទូរគមនាគមន៍"],
+          money: ["១០០ លានដុល្លារ"],
+        };
+
+        for (const [type, items] of Object.entries(entityTypes)) {
+          items.forEach((item) => {
+            formattedText = formattedText.replace(
+              item,
+              `<span class="entity-tag ${type}">${item}</span>`
+            );
+          });
+        }
+
+        const data = {
+          entities: entities,
+          formatted_output: formattedText,
+        };
+
+        displayVisualResults(data);
+        updateStats(entities);
+        updateEntityList(entities);
+      }
+
+      // Notification system
+      function showNotification(message, type) {
+        // Remove existing notifications
+        document.querySelectorAll(".notification").forEach((n) => n.remove());
+
+        const notification = document.createElement("div");
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+                <i class="fas fa-${
+                  type === "success"
+                    ? "check-circle"
+                    : type === "error"
+                    ? "exclamation-circle"
+                    : type === "warning"
+                    ? "exclamation-triangle"
+                    : "info-circle"
+                }"></i>
+                <span>${message}</span>
+            `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.style.animation = "slideOut 0.3s ease";
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+      }
+
+      // UI Functions
+      function scrollToAnalyze() {
+        document.getElementById("analyze").scrollIntoView({
+          behavior: "smooth",
+        });
+      }
+
+      function showEntityInfo(text, type) {
+        alert(
+          `ឈ្មោះពិសេស: ${text}\nប្រភេទ: ${type}\n\nចុច OK ដើម្បីស្វែងរកព័ត៌មានបន្ថែម។`
+        );
+      }
+
+      function exportResults(format) {
+        const text = document.getElementById("khmerTextInput").value;
+        const entities = document.getElementById("entityList").innerText;
+
+        let content = "";
+        const filename = `ner_results_${new Date().getTime()}.${format}`;
+
+        if (format === "json") {
+          content = JSON.stringify(
+            {
+              text: text,
+              entities: entities,
+              timestamp: new Date().toISOString(),
+            },
+            null,
+            2
+          );
+        } else {
+          content = `របាយការណ៍ NER ខ្មែរ\n\nអត្ថបទ:\n${text}\n\nឈ្មោះពិសេស:\n${entities}`;
+        }
+
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showNotification(`បានទាញយកឯកសារ ${format.toUpperCase()}!`, "success");
+      }
+
+      function copyResults() {
+        const text = document.getElementById("khmerTextInput").value;
+        const entities = document.getElementById("entityList").innerText;
+        const content = `អត្ថបទ:\n${text}\n\nឈ្មោះពិសេស:\n${entities}`;
+
+        navigator.clipboard
+          .writeText(content)
+          .then(() =>
+            showNotification("បានចម្លងទៅក្តារតម្បៀតខ្ទាស់!", "success")
+          )
+          .catch(() => showNotification("មិនអាចចម្លងបានទេ!", "error"));
+      }
+
+      function saveResults() {
+        const text = document.getElementById("khmerTextInput").value;
+        const timestamp = new Date().toLocaleString("km-KH");
+
+        // Save to localStorage for demonstration
+        const savedItems = JSON.parse(
+          localStorage.getItem("ner_saved") || "[]"
+        );
+        savedItems.unshift({
+          text: text.substring(0, 100) + (text.length > 100 ? "..." : ""),
+          fullText: text,
+          timestamp: timestamp,
+          date: new Date().toISOString(),
+        });
+
+        localStorage.setItem("ner_saved", JSON.stringify(savedItems));
+        showNotification("បានរក្សាទុកលទ្ធផល!", "success");
+      }
+
+      // Save anonymous prediction locally (for users who are not logged in)
+      function saveAnonPrediction(pred) {
+        try {
+          const list = JSON.parse(localStorage.getItem("anon_history") || "[]");
+          list.unshift(pred);
+          localStorage.setItem(
+            "anon_history",
+            JSON.stringify(list.slice(0, 50))
+          );
+          if (window.updateHistoryBadge) window.updateHistoryBadge();
+        } catch (e) {
+          console.error("saveAnonPrediction failed", e);
+        }
+      }
+
+      // Menu functions
+      async function showHistory(page = 1, pageSize = 20) {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          const anon = JSON.parse(localStorage.getItem("anon_history") || "[]");
+          if (!anon || anon.length === 0) {
+            showNotification("មិនមានប្រវត្តិវិភាគ", "info");
+            return;
+          }
+
+          let message = "ប្រវត្តិវិភាគ (ឥតឈ្មោះ):\n\n";
+          anon.forEach((p, i) => {
+            const ts = p.created_at
+              ? new Date(p.created_at).toLocaleString()
+              : "";
+            message += `${i + 1}. ${ts} — ${
+              p.text ? p.text.slice(0, 120) : ""
+            }\n\n`;
+          });
+
+          alert(message);
+          return;
+        }
+
+        try {
+          const data = await window.api.getHistory(page, pageSize);
+          if (
+            !data ||
+            !Array.isArray(data.predictions) ||
+            data.predictions.length === 0
+          ) {
+            showNotification("មិនមានប្រវត្តិវិភាគ", "info");
+            return;
+          }
+
+          let message = "ប្រវត្តិវិភាគ:\n\n";
+          data.predictions.forEach((p, i) => {
+            message += `${i + 1}. ${p.created_at || ""} — ${
+              p.text ? p.text.slice(0, 120) : ""
+            }\n\n`;
+          });
+
+          // Simple alert listing (can be replaced with a modal/table in future)
+          alert(message);
+        } catch (err) {
+          console.error("Error fetching history:", err);
+          showNotification(
+            "មានបញ្ហាក្នុងការទាញប្រវត្តិ: " + (err.message || err),
+            "error"
+          );
+        }
+      }
+
+      function showSaved() {
+        const savedItems = JSON.parse(
+          localStorage.getItem("ner_saved") || "[]"
+        );
+        if (savedItems.length === 0) {
+          alert("មិនទាន់មានអត្ថបទដែលបានរក្សាទុកទេ។");
+          return;
+        }
+
+        let message = "អត្ថបទដែលបានរក្សាទុក:\n\n";
+        savedItems.forEach((item, index) => {
+          message += `${index + 1}. ${item.text}\n   កាលបរិច្ឆេទ: ${
+            item.timestamp
+          }\n\n`;
+        });
+
+        alert(message);
+      }
+
+      function showSettings() {
+        alert(
+          "ការកំណត់ប្រព័ន្ធ:\n\n- ភាសា: ខ្មែរ\n- ទំហំអក្សរ: ធម្មតា\n- ទម្រង់កាលបរិច្ឆេទ: ខ្មែរ\n\n(អនុគមន៍នេះនឹងត្រូវបានបង្កើតនៅពេលក្រោយ)"
+        );
+      }
+
+      function showHelp() {
+        window.open("/api/docs", "_blank");
+      }
+
+      function checkHealth() {
+        fetch("/api/v1/health")
+          .then((res) => res.json())
+          .then((data) => {
+            const status = data.status === "healthy" ? "✅" : "❌";
+            const model = data.model_loaded ? "✅" : "❌";
+            const db = data.database ? "✅" : "❌";
+
+            alert(
+              `ស្ថានភាពប្រព័ន្ធ:\n\nAPI: ${status}\nម៉ូដែល: ${model}\nទិន្នន័យ: ${db}\n\nព័ត៌មានលម្អិតនៅក្នុង Console។`
+            );
+          })
+          .catch((err) => {
+            alert("មិនអាចភ្ជាប់ទៅ API: " + err.message);
+          });
+      }
+
+      function clearAllData() {
+        if (
+          confirm(
+            "តើអ្នកពិតជាចង់សម្អាតទិន្នន័យទាំងអស់មែនទេ?\n\nសកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ។"
+          )
+        ) {
+          localStorage.clear();
+          clearResults();
+          document.getElementById("khmerTextInput").value = "";
+          document.getElementById("charCount").textContent = "0";
+          showNotification("បានសម្អាតទិន្នន័យទាំងអស់!", "success");
+        }
+      }
+
+      function showTutorial() {
+        alert(
+          'ការណែនាំប្រើប្រាស់:\n\n១. បញ្ចូលអត្ថបទខ្មែរនៅក្នុងប្រអប់\n២. ចុចប៊ូតុង "វិភាគ"\n៣. មើលឈ្មោះពិសេសដែលត្រូវបានបង្ហាញជាពណ៌\n៤. ចុចលើឈ្មោះពណ៌ដើម្បីមើលព័ត៌មានលម្អិត\n៥. ទាញយកលទ្ធផលក្នុងទម្រង់ផ្សេងៗ'
+        );
+      }
+    </script>
+  </body>
+</html>
