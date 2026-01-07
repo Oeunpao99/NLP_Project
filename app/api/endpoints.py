@@ -9,7 +9,6 @@ from sqlalchemy import text
 from typing import List, Optional
 from datetime import datetime
 import logging
-
 from app.models.database import get_db
 from app.services.ner_service import NERService
 from app.schemas.prediction import *
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def health_check(db: Session = Depends(get_db)):
     """Health check endpoint"""
     from app.services.ner_service import model_loader
-    
+    # internal server 500 not fount
     try:
         # Check database connection
         db.execute(text('SELECT 1'))
