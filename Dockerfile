@@ -31,5 +31,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"
 
-# Change the CMD in your Dockerfile to match docker-compose.yml structure
-CMD ["sh", "-c", "python scripts/init_db.py && uvicorn api:app --host 0.0.0.0 --port 8000"]
+# Run the application (docker-compose may override command to run migrations/init)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
